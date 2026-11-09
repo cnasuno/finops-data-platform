@@ -19,6 +19,8 @@ os.environ["DB_NAME"] = "finops_test_db"
 
 def test_pipeline_failure():
     conn = get_connection()
+    assert conn.database == "finops_test_db", \
+    "테스트 전용 DB가 아닙니다."
     cursor = conn.cursor()
 
     # VARCHAR(20)에 맞는 고유 테스트 ID
@@ -74,6 +76,7 @@ def test_pipeline_failure():
         conn.close()
 
     # 별도 연결로 확정된 DB 상태 검증
+
     verify_conn = get_connection()
     verify_cursor = verify_conn.cursor()
 

@@ -12,6 +12,8 @@ TEST_ID = "TXN_ROLLBACK_TEST"
 def main():
     os.environ["DB_NAME"] = "finops_test_db"
     conn = get_connection()
+    assert conn.database == "finops_test_db", \
+    "테스트 전용 DB가 아닙니다."
     cursor = conn.cursor()
 
     try:

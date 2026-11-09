@@ -88,13 +88,12 @@ WHERE t.transaction_id IS NULL;
 -- =========================================================
 
 SELECT
-    transaction_at,
+    DATE(transaction_at) AS transaction_date,
     COUNT(*) AS transaction_count,
     SUM(amount) AS total_amount
 FROM transactions
-GROUP BY transaction_at
-ORDER BY transaction_at DESC;
-
+GROUP BY DATE(transaction_at)
+ORDER BY transaction_date DESC;
 
 -- =========================================================
 -- Q7. 총거래 금액 500만 원 초과 계좌 (CTE)

@@ -26,9 +26,11 @@ def validate_transaction(transaction, account_ids):
     ]
 
     for field in required_fields:
-		    # transaction.get(field) 
-		    # : 딕셔너리에서 행마다 key별 value 가져옴, 없으면 none 
-        if not transaction.get(field):
+		        # transaction.get(field) 
+		        # : 딕셔너리에서 행마다 key별 value 가져옴, 없으면 none 
+        value = transaction.get(field)
+                                # strip : 문자열 양쪽 공백 제거
+        if value is None or not str(value).strip():
             return False, "MISSING_FIELD", f"{field} is missing"
 
     # 2. 거래 금액 검사

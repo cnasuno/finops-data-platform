@@ -26,35 +26,33 @@ def get_connection():
 
 def load_accounts(conn):
     csv_path = BASE_DIR / "data" / "sample" / "accounts.csv"
+    cursor = conn.cursor()
 
-    with open(csv_path, "r", encoding="utf-8", newline="") as f:
-        reader = csv.DictReader(f)
+    try:
+        with open(csv_path, "r", encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f)
 
-        cursor = conn.cursor()
-
-        for account in reader:
-            cursor.execute(
-                """
-                INSERT INTO accounts
-                    (account_id, account_name, created_at)
-                VALUES (%s, %s, %s)
-                ON DUPLICATE KEY UPDATE
-                    account_id = account_id
-                """,
-                # account_id 중복이면 insert 대신 update(값 변화 x)
-                (
-                    account["account_id"],
-                    account["account_name"],
-                    account["created_at"]
+            for account in reader:
+                cursor.execute(
+                    """
+                    INSERT INTO accounts
+                        (account_id, account_name, created_at)
+                    VALUES (%s, %s, %s)
+                    ON DUPLICATE KEY UPDATE
+                        account_id = account_id
+                    """,
+                    (
+                        account["account_id"],
+                        account["account_name"],
+                        account["created_at"]
+                    )
                 )
-            )
-
-        conn.commit()
+    finally:
         cursor.close()
 
     print("Accounts loaded successfully!")
-    
-    
+
+
 def load_transactions(conn, valid):
     cursor = conn.cursor()
     inserted = 0
@@ -80,18 +78,15 @@ def load_transactions(conn, valid):
                 )
             )
 
-						# cursor.rowcount : 직전 실행 SQL로 영향 받은 행의 수
+			# cursor.rowcount : 직전 실행 SQL로 영향 받은 행의 수
             if cursor.rowcount == 1:
                 inserted += 1
             else:
                 duplicates += 1
 
-        conn.commit()
         return inserted, duplicates
 
-    except Exception: # 파이썬의 일반적 오류
-        conn.rollback()
-        raise # 예외를 다시 호출한 쪽으로 전달
+
     finally:
         cursor.close()
 
@@ -110,7 +105,7 @@ def start_pipeline_run(conn, source_file, source_hash):
             (source_file, source_hash)
         )
 
-				# lastrowid : 방금 insert한 pipeline 행의 자동 생성된 run_id 가져옴
+		# lastrowid : 방금 insert한 pipeline 행의 자동 생성된 run_id 가져옴
         run_id = cursor.lastrowid
         conn.commit()
         return run_id
@@ -144,12 +139,9 @@ def load_rejected_transactions(conn, run_id, rejected):
                 )
             )
 
-        conn.commit()
         return len(rejected)
 
-    except Exception:
-        conn.rollback()
-        raise
+
     finally:
         cursor.close()
 
@@ -182,10 +174,8 @@ def finish_pipeline_run(conn, run_id, input_count,
                 run_id
             )
         )
-        conn.commit()
     finally:
         cursor.close()
-
 
 
 if __name__ == "__main__":
@@ -193,9 +183,8 @@ if __name__ == "__main__":
     run_id = None
 
     try:
-        load_accounts(conn)
-
         csv_path = BASE_DIR / "data" / "sample" / "transactions.csv"
+
         source_hash = hashlib.sha256(
             csv_path.read_bytes()
         ).hexdigest()
@@ -207,9 +196,14 @@ if __name__ == "__main__":
             transactions, account_ids
         )
 
+        # 실행 이력 생성 및 RUNNING 확정
         run_id = start_pipeline_run(
             conn, csv_path.name, source_hash
         )
+
+        # 실제 데이터 적재 시작
+        # 아래 작업들은 하나의 트랜잭션으로 처리
+        load_accounts(conn)
 
         inserted, duplicates = load_transactions(conn, valid)
 
@@ -226,6 +220,9 @@ if __name__ == "__main__":
             "SUCCESS"
         )
 
+        # 모든 적재 작업이 성공하면 확정
+        conn.commit()
+
         print(f"Run ID: {run_id}")
         print(f"Input: {len(transactions)}")
         print(f"Inserted: {inserted}")
@@ -233,12 +230,23 @@ if __name__ == "__main__":
         print(f"Rejected: {rejected_count}")
 
     except Exception:
+        # 아직 확정하지 않은 데이터 적재 취소
+        conn.rollback()
+
         if run_id is not None:
-            finish_pipeline_run(
-                conn, run_id, 0, 0, 0, 0, "FAILED"
-            )
+            try:
+                # 실패 이력은 별도 트랜잭션으로 저장
+                finish_pipeline_run(
+                    conn, run_id,
+                    0, 0, 0, 0, "FAILED"
+                )
+                conn.commit()
+
+            except Exception:
+                conn.rollback()
+                raise
+
         raise
 
     finally:
         conn.close()
-

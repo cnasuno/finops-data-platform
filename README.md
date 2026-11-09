@@ -16,6 +16,8 @@ Python과 MySQL을 활용하여 금융 거래 데이터를 생성, 검증, 적�
 | Libraries | mysql-connector-python, python-dotenv |
 
 ## 2. Project Architecture
+상세 시스템 구조와 데이터 처리 흐름은
+[Architecture Documentation](docs/architecture.md)에서 확인할 수 있습니다.
 
 ```text
 CSV Data
@@ -248,18 +250,26 @@ python -m pip install -r requirements.txt
 
 MySQL에서 `sql/schema.sql`을 실행하여 `finops_db`와 필요한 테이블을 생성합니다.
 
-프로젝트 루트에 `.env` 파일을 작성합니다.
+환경변수 예시 파일을 복사합니다.
+
+```bash
+cp .env.example .env
+```
+
+`.env` 파일을 열어 실제 MySQL 연결 정보를 입력합니다.
 
 ```env
 DB_HOST=localhost
-DB_USER=your_user
-DB_PASSWORD=your_password
+DB_USER=your_mysql_user
+DB_PASSWORD=your_mysql_password
 DB_NAME=finops_db
 ```
 
-실제 MySQL 계정과 접속 주소를 입력해야 하며, 해당 계정에는 데이터베이스 접근 권한이 필요합니다.
+WSL과 Windows에서 MySQL을 실행하는 위치에 따라 `DB_HOST`를 실제 접속 가능한 주소로 변경해야 합니다.
 
-`.env` 파일은 Git에 업로드하지 않습니다.
+`.env` 파일에는 실제 비밀번호가 포함되므로 Git에 업로드하지 않습니다. `.env.example`에는 예시 값만 기록합니다.
+
+MySQL 계정에는 해당 데이터베이스에 대한 필요한 접근 권한이 있어야 합니다.
 
 ### 8.4 Generate Sample Data
 
@@ -325,7 +335,59 @@ DB 테스트에는 `finops_test_db`에 대한 SELECT, INSERT, UPDATE, DELETE 권
 
 테스트 코드는 실제 DB 데이터를 변경할 수 있으므로, 테스트용 DB 이외에서는 실행하지 않아야 합니다.
 
-## 9. Current Limitations & Future Improvements
+## 9. Technical Challenges & Solutions
+
+### 9.1 Duplicate Transaction Handling
+
+**Problem**
+
+동일한 CSV 파일을 반복 실행할 경우 기존 거래가 중복 적재되어 데이터 정확성이 저하될 수 있습니다.
+
+**Solution**
+
+- `transaction_id`를 기본키로 설정했습니다.
+- MySQL의 `ON DUPLICATE KEY UPDATE`를 사용하여 중복 삽입을 방지했습니다.
+- 신규 적재 건수와 중복 처리 건수를 구분하여 집계했습니다.
+
+**Verification**
+
+동일한 10,000건의 CSV 데이터를 재실행한 결과, 신규 적재 0건, 중복 9,854건, 검증 실패 146건을 확인했습니다.
+
+### 9.2 Transaction Rollback
+
+**Problem**
+
+데이터 적재 도중 오류가 발생하면 일부 데이터만 저장되어 데이터베이스의 일관성이 깨질 수 있습니다.
+
+**Solution**
+
+- 실행 시작 기록을 별도로 COMMIT했습니다.
+- 거래 데이터 적재와 성공 실행 이력 업데이트를 하나의 트랜잭션으로 관리했습니다.
+- 예외 발생 시 ROLLBACK을 수행하고 실행 상태를 `FAILED`로 기록하도록 구현했습니다.
+
+**Verification**
+
+강제 장애 테스트를 통해 미확정 거래가 ROLLBACK되고, 실행 이력에 `FAILED` 상태가 기록되는 것을 확인했습니다.
+
+### 9.3 Data Quality and Traceability
+
+**Problem**
+
+잘못된 금융 거래 데이터를 단순히 삭제하면 오류 발생 원인과 원본 데이터를 추적하기 어렵습니다.
+
+**Solution**
+
+- 필수값, 거래 금액, 계좌 ID, 거래 유형, 날짜 형식을 검증했습니다.
+- 검증 실패 거래를 정상 거래와 분리했습니다.
+- 오류 유형과 메시지, 원본 JSON 데이터를 `rejected_transactions`에 저장했습니다.
+- `run_id`를 통해 오류 거래와 파이프라인 실행 이력을 연결했습니다.
+
+**Result**
+
+정상 거래 데이터와 검증 실패 데이터를 구분하면서, 오류 원인과 입력 데이터의 추적 가능성을 확보했습니다.
+
+
+## 10. Current Limitations & Future Improvements
 
 현재 구현에서 개선이 필요한 부분은 다음과 같습니다.
 
@@ -339,7 +401,7 @@ DB 테스트에는 `finops_test_db`에 대한 SELECT, INSERT, UPDATE, DELETE 권
 - 처리 성능 측정 및 최적화
 - 정기 실행과 모니터링 자동화
 
-## 10. Project Status
+## 11. Project Status
 
 - [x] Development environment setup
 - [x] MySQL schema design
@@ -359,7 +421,7 @@ DB 테스트에는 `finops_test_db`에 대한 SELECT, INSERT, UPDATE, DELETE 권
 - [ ] Performance optimization
 - [ ] Automated scheduling and monitoring
 
-## 11. Project Objective
+## 12. Project Objective
 
 금융 거래 데이터를 처리하는 과정에서 발생할 수 있는 데이터 품질 문제, 중복 거래 및 시스템 오류에 대응하는 ETL 파이프라인을 직접 설계하고 구현하는 것을 목표로 했습니다.
 

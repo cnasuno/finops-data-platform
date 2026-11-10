@@ -52,9 +52,41 @@ V2 — Financial Data API Service
 - No dashboard
 - No Docker Compose configuration
 
-## Next Tasks — V2 Day 2
-1. Account list API
-2. Account transaction history API
-3. Transaction filtering by date and type
-4. Transaction analytics API
-5. API response validation and testing
+## V2 Day 2 — Backend API Expansion
+
+### Implemented
+- GET /api/v1/accounts
+- GET /api/v1/accounts/{account_id}/transactions
+- Transaction filtering by start_date, end_date and transaction_type
+- Transaction pagination
+- GET /api/v1/analytics/summary
+- GET /api/v1/pipeline/runs
+- GET /api/v1/data-quality/summary
+- HTTP 404 handling for nonexistent accounts
+- HTTP 422 validation for invalid query parameters
+
+### Verification
+- Account list API tested manually
+- Account transaction history API tested manually
+- Transaction filtering tested manually
+- Analytics API results matched MySQL queries
+- Pipeline history and data quality APIs tested manually
+- Existing pytest tests passed using tests/ directory
+- Root-level legacy test files caused collection errors and were excluded
+
+### Files Modified
+- api/main.py
+- PROJECT_STATUS.md
+
+### Known Limitations
+- No API authentication or role-based authorization
+- No automated API tests yet
+- No dashboard
+- No Docker Compose configuration
+
+## Next Tasks — V2 Day 3
+1. API Key authentication
+2. Viewer / Admin role separation
+3. HTTP 401 / 403 responses
+4. Secret management using environment variables
+5. Authorization tests

@@ -4,17 +4,23 @@ import mysql.connector
 from fastapi import Query
 from datetime import date
 from typing import Literal
+from fastapi import Depends
+from api.auth import get_current_role, require_admin, mask_account_id
 
 app = FastAPI(title="FinOps Data Platform API")
 
 
 @app.get("/health")
-def health_check():
+def health_check(
+    role: str = Depends(get_current_role)
+):
     return {"status": "ok"}
 
 
 @app.get("/health/db")
-def database_health_check():
+def database_health_check(
+    role: str = Depends(get_current_role)
+):
     conn = None
 
     try:
@@ -46,7 +52,8 @@ def get_transactions(
     size: int = Query(10, ge=1, le=100),
     start_date: date | None = None,
     end_date: date | None = None,
-    transaction_type: Literal["DEPOSIT", "WITHDRAWAL"] | None = None
+    transaction_type: Literal["DEPOSIT", "WITHDRAWAL"] | None = None,
+    role: str = Depends(get_current_role)
 ):
     offset = (page - 1) * size
 
@@ -82,6 +89,12 @@ def get_transactions(
 
         transactions = cursor.fetchall()
 
+        if role == "viewer":
+            for transaction in transactions:
+                transaction["account_id"] = mask_account_id(
+                    transaction["account_id"]
+                )
+
         return {
             "page": page,
             "size": size,
@@ -103,7 +116,9 @@ def get_transactions(
 
 
 @app.get("/api/v1/accounts")
-def get_accounts():
+def get_accounts(
+    role: str = Depends(get_current_role)
+):
     conn = None
     cursor = None
 
@@ -119,6 +134,12 @@ def get_accounts():
         """)
 
         accounts = cursor.fetchall()
+
+        if role == "viewer":
+            for account in accounts:
+                account["account_id"] = mask_account_id(
+                    account["account_id"]
+                )
 
         return {"accounts": accounts}
 
@@ -137,7 +158,10 @@ def get_accounts():
 
 
 @app.get("/api/v1/accounts/{account_id}/transactions")
-def get_account_transactions(account_id: str):
+def get_account_transactions(
+    account_id: str,
+    role: str = Depends(get_current_role)
+):
     conn = None
     cursor = None
 
@@ -170,6 +194,13 @@ def get_account_transactions(account_id: str):
 
         transactions = cursor.fetchall()
 
+        if role == "viewer":
+            for transaction in transactions:
+                transaction["account_id"] = mask_account_id(
+                    transaction["account_id"]
+                )
+            account_id=mask_account_id(account_id)
+
         return {
             "account_id": account_id,
             "transactions": transactions
@@ -190,7 +221,9 @@ def get_account_transactions(account_id: str):
 
 
 @app.get("/api/v1/analytics/summary")
-def get_analytics_summary():
+def get_analytics_summary(
+    role: str = Depends(get_current_role)
+):
     conn = None
     cursor = None
 
@@ -226,7 +259,9 @@ def get_analytics_summary():
 
 
 @app.get("/api/v1/pipeline/runs")
-def get_pipeline_runs():
+def get_pipeline_runs(
+    role: str = Depends(require_admin)
+):
     conn = None
     cursor = None
 
@@ -262,7 +297,9 @@ def get_pipeline_runs():
 
 
 @app.get("/api/v1/data-quality/summary")
-def get_data_quality_summary():
+def get_data_quality_summary(
+    role: str = Depends(get_current_role)
+):
     conn = None
     cursor = None
 

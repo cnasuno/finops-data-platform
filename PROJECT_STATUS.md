@@ -84,9 +84,47 @@ V2 — Financial Data API Service
 - No dashboard
 - No Docker Compose configuration
 
-## Next Tasks — V2 Day 3
-1. API Key authentication
-2. Viewer / Admin role separation
-3. HTTP 401 / 403 responses
-4. Secret management using environment variables
-5. Authorization tests
+## V2 Day 3 — API Security and Access Control
+
+### Implemented
+- API Key authentication using `X-API-Key` HTTP header
+- Viewer and Admin role separation
+- FastAPI dependency-based authentication using `Depends()` and `Security()`
+- HTTP 401 for missing or invalid API Keys
+- HTTP 403 for insufficient permissions
+- Admin-only access to pipeline execution history
+- Account ID masking for Viewer responses
+- API Key management using environment variables
+- Automated authentication and authorization tests
+
+### Verification
+- Missing API Key: HTTP 401
+- Invalid API Key: HTTP 401
+- Viewer transaction access: HTTP 200
+- Viewer pipeline history access: HTTP 403
+- Admin pipeline history access: HTTP 200
+- Viewer account ID masking: Passed
+- Security tests: 6 passed, 0 failed
+- Existing `httpx` deprecation warning: 1
+
+### Files Added
+- `api/auth.py`
+- `tests/test_api_auth.py`
+
+### Files Modified
+- `api/main.py`
+- `PROJECT_STATUS.md`
+- `requirements.txt` (if updated after installing httpx)
+
+### Known Limitations
+- API Key authentication is intended for demonstration, not production banking security
+- Masked account IDs cannot be reused directly as account lookup identifiers
+- API tests use mocked database connections
+- No dashboard or Docker Compose configuration yet
+
+## Next Tasks — V2 Day 4
+1. Install and configure Streamlit
+2. Connect Streamlit to FastAPI
+3. Implement transaction and analytics dashboard
+4. Implement data quality visualization
+5. Verify dashboard data against API responses

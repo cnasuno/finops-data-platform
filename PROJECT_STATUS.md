@@ -4,7 +4,7 @@
 V2 — Financial Data API Service
 
 ## Last Updated
-2026-11-09
+2026-11-11
 
 ## V1 Completed
 - MySQL database schema
@@ -122,9 +122,57 @@ V2 — Financial Data API Service
 - API tests use mocked database connections
 - No dashboard or Docker Compose configuration yet
 
-## Next Tasks — V2 Day 4
-1. Install and configure Streamlit
-2. Connect Streamlit to FastAPI
-3. Implement transaction and analytics dashboard
-4. Implement data quality visualization
-5. Verify dashboard data against API responses
+
+## V2 Day 4 — Streamlit Dashboard
+
+### Date
+2026-11-11
+
+### Implemented
+- Streamlit dashboard setup
+- FastAPI integration using HTTP requests
+- API Key authentication through X-API-Key header
+- Overview dashboard with transaction summary metrics
+- Transaction type distribution bar chart
+- Transaction list with type and date filters
+- Transaction pagination
+- Data Quality dashboard with rejection and pipeline statistics
+- Pipeline execution status visualization
+- Admin-only pipeline execution history
+- Viewer access restriction handling
+- Improved total transaction amount display
+
+### Verification
+- Streamlit dashboard started successfully on localhost:8501
+- FastAPI integration confirmed
+- Overview displayed actual MySQL transaction statistics
+- Transaction type filtering verified
+- Date filtering verified
+- Pagination verified
+- Viewer account ID masking confirmed
+- Data Quality statistics displayed successfully
+- Admin pipeline history access verified
+- Viewer pipeline history access denied
+- Existing pytest suite passed (reported by developer)
+
+### Files Added
+- dashboard/app.py
+
+### Files Modified
+- requirements.txt
+- PROJECT_STATUS.md
+
+### Known Limitations
+- Streamlit dashboard has not been containerized
+- No automated Streamlit UI tests
+- Daily transaction trend visualization not yet implemented
+- Error-type distribution visualization not yet implemented
+- API Key authentication is for demonstration purposes only
+
+## Next Tasks — V2 Day 5
+1. Create Dockerfile for FastAPI
+2. Create Dockerfile for Streamlit
+3. Configure MySQL, FastAPI and Streamlit with Docker Compose
+4. Configure environment variables and database health checks
+5. Test database failure scenarios
+6. Verify reproducible startup and shutdown

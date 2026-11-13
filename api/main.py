@@ -1,14 +1,13 @@
-from fastapi import FastAPI, HTTPException
-from api.database import get_connection
 import mysql.connector
-from fastapi import Query
+import logging
+from fastapi import FastAPI, HTTPException, Query, Depends
+from api.database import get_connection
 from datetime import date
 from typing import Literal
-from fastapi import Depends
 from api.auth import get_current_role, require_admin, mask_account_id
 
 app = FastAPI(title="FinOps Data Platform API")
-
+logger = logging.getLogger(__name__)
 
 @app.get("/health")
 def health_check(
@@ -34,7 +33,11 @@ def database_health_check(
 
         return {"database": "connected"}
 
-    except mysql.connector.Error:
+    except mysql.connector.Error as e:
+        logger.error(
+            "Database health check failed: %s",
+            e.__class__.__name__
+        )
         raise HTTPException(
             status_code=503,
             detail="Database unavailable"

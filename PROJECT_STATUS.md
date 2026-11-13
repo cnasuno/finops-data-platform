@@ -4,7 +4,7 @@
 V2 — Financial Data API Service
 
 ## Last Updated
-2026-11-11
+2026-11-13
 
 ## V1 Completed
 - MySQL database schema
@@ -169,10 +169,60 @@ V2 — Financial Data API Service
 - Error-type distribution visualization not yet implemented
 - API Key authentication is for demonstration purposes only
 
-## Next Tasks — V2 Day 5
-1. Create Dockerfile for FastAPI
-2. Create Dockerfile for Streamlit
-3. Configure MySQL, FastAPI and Streamlit with Docker Compose
-4. Configure environment variables and database health checks
-5. Test database failure scenarios
-6. Verify reproducible startup and shutdown
+
+## V2 Day 5 — Docker Deployment and Failure Handling
+
+### Date
+2026-11-13
+
+### Implemented
+- Docker Desktop and WSL 2 integration
+- FastAPI Docker image
+- Streamlit Docker image
+- Docker Compose configuration
+- MySQL 8.4 container
+- Environment variable separation for Docker
+- MySQL persistent volume
+- Database health check
+- Docker internal network communication
+- Existing ETL pipeline execution in Docker
+- Database connection failure logging
+
+### Verification
+- Docker hello-world: Passed
+- Docker Compose configuration validation: Passed
+- MySQL container health check: Healthy
+- Database schema initialization: Passed
+- ETL data loading: Passed
+- FastAPI container: Running
+- Streamlit container: Running
+- Dashboard and API integration: Passed
+- Database failure: HTTP 503
+- Database recovery: HTTP 200
+- pytest suite: Passed (developer reported)
+
+### Files Added
+- Dockerfile.api
+- Dockerfile.dashboard
+- compose.yaml
+- .dockerignore
+- .env.docker.example
+
+### Files Modified
+- dashboard/app.py
+- api/main.py
+- .gitignore
+- PROJECT_STATUS.md
+
+### Known Limitations
+- Docker setup requires initial database and CSV initialization
+- API Key authentication is demonstration-level security
+- No automated container failure integration test
+- No production deployment or centralized monitoring
+
+## Next Tasks — V2 Day 6
+1. Verify final API and database consistency
+2. Update README with Docker execution instructions
+3. Document architecture and troubleshooting
+4. Prepare project screenshots and portfolio description
+5. Prepare IBK application materials

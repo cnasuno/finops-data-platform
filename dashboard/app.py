@@ -1,8 +1,11 @@
-
+import os
 import streamlit as st
 import requests
 
-API_BASE_URL = "http://127.0.0.1:8000"
+API_BASE_URL = os.getenv(
+    "API_BASE_URL",
+    "http://127.0.0.1:8000"
+)
 
 st.set_page_config(
     page_title="FinOps Dashboard",
@@ -49,7 +52,7 @@ if page == "Overview":
 
         col2.metric(
             "Total Amount",
-            f'{data["total_amount"]:, 1_000_000:,.1f}'
+            f'{data["total_amount"]/ 1_000_000:,.1f}'
         )
 
         col3.metric(

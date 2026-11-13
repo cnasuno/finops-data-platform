@@ -220,9 +220,46 @@ V2 — Financial Data API Service
 - No automated container failure integration test
 - No production deployment or centralized monitoring
 
-## Next Tasks — V2 Day 6
-1. Verify final API and database consistency
-2. Update README with Docker execution instructions
-3. Document architecture and troubleshooting
-4. Prepare project screenshots and portfolio description
-5. Prepare IBK application materials
+
+## V2 Day 6 — Integration Testing and Documentation
+
+### Date
+2026-11-13
+
+### Completed
+- Added five API behavior tests
+- Verified transaction pagination
+- Verified invalid query parameter handling
+- Verified HTTP 404 for nonexistent accounts
+- Verified HTTP 503 for database connection failure
+- Compared MySQL aggregation results with FastAPI responses
+- Updated V1/V2 architecture documentation
+- Updated README with API and Docker instructions
+- Documented failure scenarios and troubleshooting
+
+### Verification
+- Existing automated tests: 19 passed
+- Additional API tests: 5 passed (developer reported)
+- MySQL and FastAPI aggregation results: Matched
+- GitHub documentation and test files: Confirmed
+
+### Files Added
+- tests/test_api_integration.py
+- docs/troubleshooting.md
+
+### Files Modified
+- README.md
+- docs/architecture.md
+- PROJECT_STATUS.md
+
+### Known Limitations
+- No automated end-to-end container failure test
+- No production-level authentication
+- No centralized monitoring or cloud deployment
+
+### Next Tasks — V2 Day 7
+1. Final regression tests
+2. Docker Compose startup verification
+3. Capture dashboard and API screenshots
+4. Prepare one-minute and three-minute project descriptions
+5. Finalize IBK internship application

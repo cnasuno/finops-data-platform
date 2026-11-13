@@ -426,3 +426,376 @@ DB 테스트에는 `finops_test_db`에 대한 SELECT, INSERT, UPDATE, DELETE 권
 금융 거래 데이터를 처리하는 과정에서 발생할 수 있는 데이터 품질 문제, 중복 거래 및 시스템 오류에 대응하는 ETL 파이프라인을 직접 설계하고 구현하는 것을 목표로 했습니다.
 
 프로젝트를 통해 Python 기반 데이터 처리, MySQL 데이터 모델링, SQL 분석, 트랜잭션 관리 및 pytest 자동화 테스트를 통합적으로 경험했습니다.
+
+
+
+---
+
+# V2 — Financial Data API Service
+
+## 13. REST API
+
+FastAPI를 사용하여 MySQL의 금융 거래 데이터를 HTTP API로 조회하는 서비스를 구현했습니다.
+
+### API Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/health` | API 상태 확인 |
+| GET | `/health/db` | DB 연결 상태 확인 |
+| GET | `/api/v1/accounts` | 계좌 목록 조회 |
+| GET | `/api/v1/accounts/{account_id}/transactions` | 계좌별 거래 조회 |
+| GET | `/api/v1/transactions` | 거래 목록 조회 및 필터링 |
+| GET | `/api/v1/analytics/summary` | 거래 통계 조회 |
+| GET | `/api/v1/pipeline/runs` | 파이프라인 실행 이력 |
+| GET | `/api/v1/data-quality/summary` | 데이터 품질 통계 |
+
+모든 엔드포인트에 API Key 인증을 적용했습니다.
+
+### Pagination
+
+거래 목록 API에 페이지네이션을 적용했습니다.
+
+- `page`: 조회할 페이지 번호 (기본값 1)
+- `size`: 한 페이지의 거래 건수 (기본값 10, 최대 100)
+- `offset`: `(page - 1) * size`
+
+SQL의 `LIMIT`과 `OFFSET`을 사용하여 필요한 데이터만 조회합니다.
+
+### Transaction Filtering
+
+다음 조건을 이용한 거래 필터링을 지원합니다.
+
+- 시작일 (`start_date`)
+- 종료일 (`end_date`)
+- 거래 유형 (`transaction_type`)
+
+SQL 파라미터 바인딩으로 사용자 입력값을 처리합니다.
+
+## 14. Security & Access Control
+
+### API Key Authentication
+
+HTTP 요청 헤더의 `X-API-Key`를 이용하여 인증합니다.
+
+API Key는 환경변수로 관리합니다.
+
+- `VIEWER_API_KEY`
+- `ADMIN_API_KEY`
+
+키 비교에는 `secrets.compare_digest()`를 사용합니다.
+
+### Role-Based Authorization
+
+| Function | Viewer | Admin |
+|---|---|---|
+| Transaction 조회 | O | O |
+| Account 조회 | O | O |
+| Analytics 조회 | O | O |
+| Data Quality 조회 | O | O |
+| Pipeline Runs 조회 | X | O |
+
+관리자 전용 API에 Viewer가 접근하면 HTTP 403을 반환합니다.
+
+### Data Masking
+
+Viewer에게 반환하는 계좌 ID의 마지막 네 자리를 제외한 나머지를 마스킹합니다.
+
+```text
+Original: ACC000123
+Masked:   *****0123
+```
+
+해당 인증 및 마스킹 기능은 학습용 최소 구현이며, 실제 금융기관 수준의 보안이나 계좌별 접근권한 관리를 제공하지 않습니다.
+
+## 15. Streamlit Dashboard
+
+Streamlit을 이용하여 금융 거래 및 데이터 품질 현황을 조회하는 대시보드를 구현했습니다.
+
+### Overview
+
+- 전체 거래 건수
+- 전체 거래 금액
+- 입금 건수
+- 출금 건수
+- 거래 유형별 분포 차트
+
+### Transactions
+
+- 거래 내역 테이블
+- 날짜 범위 필터
+- 거래 유형 필터
+- 페이지네이션
+
+### Data Quality
+
+- 검증 실패 데이터 건수
+- 중복 거래 집계
+- 파이프라인 실행 횟수
+- 성공 및 실패 실행 현황
+- 관리자 전용 실행 이력
+
+대시보드는 MySQL에 직접 연결하지 않고 FastAPI를 통해 데이터를 조회합니다.
+
+## 16. Docker Compose Deployment
+
+Docker Compose를 사용하여 MySQL, FastAPI, Streamlit을 컨테이너 환경에서 실행합니다.
+
+### Services
+
+| Service | Technology | Port |
+|---|---|---|
+| db | MySQL 8.4 | Docker 내부 3306 |
+| api | FastAPI | 8000 |
+| dashboard | Streamlit | 8501 |
+
+### 16.1 Environment Setup
+
+Docker 환경변수 예시 파일을 복사합니다.
+
+```bash
+cp .env.docker.example .env.docker
+```
+
+`.env.docker`에 실제 DB 비밀번호와 API Key를 설정합니다.
+
+```env
+DB_HOST=db
+DB_USER=finops_user
+DB_PASSWORD=your_db_password
+DB_NAME=finops_db
+
+MYSQL_ROOT_PASSWORD=your_root_password
+
+VIEWER_API_KEY=your_viewer_key
+ADMIN_API_KEY=your_admin_key
+
+API_BASE_URL=http://api:8000
+```
+
+실제 비밀번호와 API Key는 GitHub에 업로드하지 않습니다.
+
+### 16.2 Start Services
+
+```bash
+docker compose --env-file .env.docker up -d --build
+```
+
+컨테이너 상태 확인:
+
+```bash
+docker compose --env-file .env.docker ps
+```
+
+MySQL 컨테이너가 Healthy 상태인지 확인합니다.
+
+### 16.3 Initialize Database
+
+처음 실행하는 환경에서는 스키마 초기화가 필요합니다.
+
+```bash
+docker compose --env-file .env.docker exec -T db \
+  sh -c 'mysql -u root -p"$MYSQL_ROOT_PASSWORD"' \
+  < sql/schema.sql
+```
+
+이 명령어는 로컬의 `sql/schema.sql`을 MySQL 컨테이너에서 실행합니다.
+
+### 16.4 Generate and Load Sample Data
+
+로컬 Python 환경에서 모의 CSV 데이터를 생성합니다.
+
+```bash
+source .venv/bin/activate
+python src/generate_data.py
+```
+
+Docker 환경의 DB에 적재합니다.
+
+```bash
+docker compose --env-file .env.docker run --rm \
+  -v "$PWD:/app" -w /app -e DB_HOST=db \
+  api python src/load.py
+```
+
+이 명령어는 기존 API 이미지를 일회성 컨테이너로 사용하여 ETL 코드를 실행합니다.
+
+기존 MySQL 데이터가 존재하는 경우에는 스키마와 CSV를 불필요하게 다시 초기화할 필요가 없습니다.
+
+### 16.5 Access Services
+
+FastAPI Swagger UI:
+
+http://localhost:8000/docs
+
+Streamlit Dashboard:
+
+http://localhost:8501
+
+대시보드에 API Key를 입력하여 데이터를 조회할 수 있습니다.
+
+### 16.6 View Logs
+
+```bash
+docker compose --env-file .env.docker logs --tail=50 api
+```
+
+### 16.7 Stop Services
+
+```bash
+docker compose --env-file .env.docker down
+```
+
+데이터 보존을 위해 MySQL Named Volume을 사용합니다.
+
+`docker compose down -v`는 볼륨을 삭제할 수 있으므로 주의해야 합니다.
+
+## 17. API Error Handling
+
+| HTTP Status | Description |
+|---|---|
+| 200 | 정상 요청 |
+| 401 | API Key 누락 또는 불일치 |
+| 403 | 접근 권한 부족 |
+| 404 | 존재하지 않는 계좌 |
+| 422 | 잘못된 입력값 |
+| 503 | DB 연결 장애 또는 인증 설정 누락 |
+
+### Database Failure Handling
+
+MySQL 연결에 실패하면 `/health/db`에서 HTTP 503을 반환합니다.
+
+```json
+{
+  "detail": "Database unavailable"
+}
+```
+
+DB 연결 오류 발생 시 Python logging 모듈로 오류 클래스 이름을 기록합니다.
+
+Docker에서 MySQL 서비스를 중지하고 재시작하여 HTTP 503 발생 및 정상 복구를 수동으로 검증했습니다.
+
+## 18. V2 Testing
+
+### Automated Tests
+
+pytest와 모의 DB 객체를 이용하여 인증, 권한, API 요청 처리 및 장애 응답을 검증합니다.
+
+기존 테스트:
+
+- 데이터 유효성 검증
+- 인증 및 인가
+- 계좌 ID 마스킹
+- 파이프라인 실패 처리
+
+추가 API 테스트:
+
+- 페이지네이션
+- 잘못된 페이지 번호
+- 잘못된 날짜 범위
+- 존재하지 않는 계좌
+- DB 연결 실패
+
+### Test Execution
+
+```bash
+python -m pytest tests/ -v
+```
+
+검증 기록:
+
+- 기존 테스트: 19 passed, 1 warning
+- 추가 API 테스트: 5 passed (로컬 실행 확인)
+
+추가 API 테스트 파일의 GitHub 반영 여부는 별도 확인이 필요합니다.
+
+### Database Consistency
+
+MySQL Workbench에서 직접 조회한 SQL 집계 결과와 FastAPI의 `/api/v1/analytics/summary` 응답을 비교했습니다.
+
+다음 네 항목의 일치를 확인했습니다.
+
+- 전체 거래 건수
+- 전체 거래 금액
+- 입금 건수
+- 출금 건수
+
+실제 DB와 API의 집계 결과가 일치하는 것을 수동으로 검증했습니다.
+
+## 19. V2 Technical Challenges
+
+### 19.1 Authentication and Authorization
+
+**Problem**
+
+사용자 권한에 관계없이 모든 금융 데이터 및 운영 정보에 접근할 수 있는 문제를 방지해야 했습니다.
+
+**Solution**
+
+- API Key 기반 인증 구현
+- Viewer와 Admin 역할 분리
+- 관리자 전용 API 접근 제한
+- Viewer 계좌 ID 마스킹
+
+**Verification**
+
+인증 실패, 권한 부족 및 마스킹 동작을 pytest로 검증했습니다.
+
+### 19.2 Database Connection Failure
+
+**Problem**
+
+MySQL 연결 장애가 발생하면 API에서 데이터를 정상적으로 조회할 수 없습니다.
+
+**Solution**
+
+- DB Health Check API 구현
+- 데이터베이스 오류 발생 시 HTTP 503 반환
+- 오류 클래스 이름 로깅
+- DB 연결 해제 및 예외 처리
+
+**Verification**
+
+Docker의 MySQL 컨테이너를 중지하여 장애를 재현하고 HTTP 503 응답을 확인했습니다.
+
+DB 재시작 후 HTTP 200 응답으로 복구를 확인했습니다.
+
+### 19.3 Container Networking
+
+**Problem**
+
+각 컨테이너는 독립적인 네트워크 환경을 사용하므로 `localhost`만으로 다른 서비스에 접근할 수 없습니다.
+
+**Solution**
+
+Docker Compose의 서비스 이름을 이용하여 컨테이너 간 통신하도록 구성했습니다.
+
+- FastAPI → `db:3306`
+- Streamlit → `http://api:8000`
+
+**Verification**
+
+Docker 환경에서 FastAPI와 MySQL, Streamlit과 FastAPI 간의 연결을 확인했습니다.
+
+## 20. V2 Limitations & Future Improvements
+
+현재 프로젝트의 주요 한계는 다음과 같습니다.
+
+- 실제 금융기관 수준의 인증·인가 미구현
+- 사용자별 계좌 접근통제 미구현
+- 전체 End-to-End 자동화 테스트 미완성
+- 중앙 집중식 모니터링 미구현
+- 클라우드 배포 미구현
+- 대용량 데이터 성능 최적화 미구현
+- 자동화된 장애 복구 미구현
+- 배치 스케줄링 미구현
+
+향후 CI/CD, 운영 모니터링, 성능 최적화, 사용자별 접근통제 기능을 확장할 수 있습니다.
+
+## 21. Project Outcome
+
+본 프로젝트에서는 모의 금융 거래 데이터의 생성부터 검증, 적재, API 조회, 인증·인가, 시각화, Docker 실행 및 장애 대응까지 연결된 데이터 서비스를 구축했습니다.
+
+이를 통해 Python 기반 ETL 개발, MySQL 데이터 모델링, REST API 설계, 접근통제, 컨테이너 운영, 자동화 테스트 및 시스템 장애 분석 경험을 확보했습니다.
+
+상세 설계는 [System Architecture](docs/architecture.md)에서 확인할 수 있습니다.

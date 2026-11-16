@@ -181,6 +181,7 @@ def finish_pipeline_run(conn, run_id, input_count,
 if __name__ == "__main__":
     conn = get_connection()
     run_id = None
+    input_count = 0
 
     try:
         csv_path = BASE_DIR / "data" / "sample" / "transactions.csv"
@@ -190,6 +191,7 @@ if __name__ == "__main__":
         ).hexdigest()
 
         transactions = read_transactions()
+        input_count = len(transactions)
         account_ids = read_account_ids()
 
         valid, rejected = classify_transactions(
@@ -238,8 +240,9 @@ if __name__ == "__main__":
                 # 실패 이력은 별도 트랜잭션으로 저장
                 finish_pipeline_run(
                     conn, run_id,
-                    0, 0, 0, 0, "FAILED"
+                    len(transactions), 0, 0, 0, "FAILED"
                 )
+
                 conn.commit()
 
             except Exception:

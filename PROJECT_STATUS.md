@@ -4,7 +4,7 @@
 V2 — Financial Data API Service
 
 ## Last Updated
-2026-11-13
+2026-11-16
 
 ## V1 Completed
 - MySQL database schema
@@ -257,9 +257,34 @@ V2 — Financial Data API Service
 - No production-level authentication
 - No centralized monitoring or cloud deployment
 
-### Next Tasks — V2 Day 7
-1. Final regression tests
-2. Docker Compose startup verification
-3. Capture dashboard and API screenshots
-4. Prepare one-minute and three-minute project descriptions
-5. Finalize IBK internship application
+## V3 Day 1 — SQL Query Optimization
+
+### Date
+2026-11-16
+
+### Completed
+- Optimized latest transaction lookup using composite indexes
+- Optimized account-specific transaction lookup
+- Compared MySQL EXPLAIN ANALYZE execution plans
+- Documented benchmark results in docs/performance.md
+- Verified FastAPI transaction endpoints
+
+### Performance Results
+- Dataset: 100,000 transactions
+- Account: ACC00032
+- Date-based index: 46.200 ms average
+- Account-based composite index: 2.075 ms average
+- Speedup: approximately 22.3x
+- Separate sorting eliminated for the optimized query
+
+### Verification
+- pytest: 24 passed (developer reported)
+- FastAPI HTTP endpoints: Working (developer reported)
+- MySQL composite index usage: Confirmed in benchmark DB
+
+### Limitations
+- Benchmark results apply to the tested dataset and environment
+- Docker database index deployment not yet verified
+
+### Next Task
+- V3 Day 3: Idempotency, retry, and batch recovery

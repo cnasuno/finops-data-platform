@@ -4,5 +4,5 @@
 __pycache__/
 .pytest_cache/
 *.pyc
-# ETL execution logs
-logs/
+logs/ # ETL execution logs
+/reports/

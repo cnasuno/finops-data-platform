@@ -4,7 +4,7 @@
 V2 — Financial Data API Service
 
 ## Last Updated
-2026-11-16
+2026-11-18
 
 ## V1 Completed
 - MySQL database schema
@@ -286,5 +286,44 @@ V2 — Financial Data API Service
 - Benchmark results apply to the tested dataset and environment
 - Docker database index deployment not yet verified
 
+## V3 Day 3 — ETL Batch Automation
+
+### Date
+2026-11-17
+
+### Completed
+- Created Python ETL execution wrapper (`scripts/run_etl.py`)
+- Implemented ETL execution logging
+- Implemented subprocess exit code propagation
+- Configured cron-based ETL scheduling
+- Added flock-based concurrent execution prevention
+- Verified scheduled ETL execution
+- Tested database connection failure handling
+- Verified ETL recovery after connection failure
+
+### Verification
+- Manual ETL execution: Passed
+- Cron execution at one-minute intervals: Passed
+- ETL execution logging: Passed
+- flock concurrency prevention: Passed
+- Database connection failure logging: Passed
+- Recovery execution: Passed
+- Normal execution exit code: 0
+- Failure exit code: Not explicitly verified
+
+### Configuration
+- Scheduler: cron
+- Schedule: Daily at 02:00
+- Concurrency control: flock
+- Log file: logs/etl.log
+- ETL command: scripts/run_etl.py
+
+### Known Limitations
+- WSL must be running for cron execution
+- No automatic retry after ETL failure
+- No alerting system
+- cron and flock configurations are local and not automatically reproduced by cloning the repository
+- Scheduled 02:00 execution has not yet been observed
+
 ### Next Task
-- V3 Day 3: Idempotency, retry, and batch recovery
+- V3 Day 4: Data Quality Monitoring

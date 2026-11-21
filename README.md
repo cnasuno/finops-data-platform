@@ -1,8 +1,55 @@
 # FinOps Data Platform
 
-Python과 MySQL을 활용하여 금융 거래 데이터를 생성, 검증, 적재하고 처리 결과를 추적하는 ETL 데이터 파이프라인 프로젝트입니다.
+![Python](https://img.shields.io/badge/Python-3.12-blue)
+![MySQL](https://img.shields.io/badge/MySQL-8.4-orange)
+![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688)
+![Docker](https://img.shields.io/badge/Docker-Compose-blue)
+![CI](https://github.com/cnasuno/finops-data-platform/actions/workflows/ci.yml/badge.svg)
 
-데이터 품질 검증, 중복 적재 방지, 트랜잭션 관리, 실행 이력 기록을 구현하여 금융 데이터 처리 과정의 정확성과 안정성을 높이는 것을 목표로 합니다.
+## Project Overview
+
+모의 금융 거래 데이터의 생성, 검증, 적재, 분석 및 서비스 제공 과정을 통합한 금융 데이터 플랫폼입니다.
+
+Python과 MySQL 기반 ETL 파이프라인을 구축하고, FastAPI와 Streamlit을 활용한 데이터 조회 서비스, Docker 기반 실행 환경, SQL 성능 최적화, 배치 자동화, 데이터 품질 검사 및 GitHub Actions 기반 CI를 구현했습니다.
+
+금융 데이터 처리 과정에서 발생할 수 있는 중복 입력, 데이터 오류, 데이터베이스 연결 장애 및 트랜잭션 중단에 대응하여 데이터의 정확성, 일관성, 추적 가능성을 확보하는 것을 목표로 합니다.
+
+## Key Achievements
+
+| Category | Result |
+|---|---|
+| Data Processing | 모의 금융 거래 10,000건 처리 |
+| Data Validation | 정상 거래 9,854건, 오류 거래 146건 분리 |
+| Idempotency | 동일 CSV 재실행 시 정상 거래 신규 적재 0건 (기존 거래 중복 방지) |
+| SQL Optimization | 100,000건 데이터 기준 최신 거래 조회 약 311배 개선 |
+| Account Query Optimization | 계좌 기반 복합 인덱스 적용 후 약 22.3배 개선 |
+| Reliability | 트랜잭션 롤백, 실패 후 재처리 및 SIGKILL 장애 실험 |
+| Automation | cron + flock 기반 배치 자동화 |
+| Data Quality | 5개 무결성 검사 및 JSON 보고서 자동 생성 |
+| Security | API Key 인증, 역할 기반 접근통제, 계좌 ID 마스킹 |
+| CI | GitHub Actions 기반 자동 테스트 및 실패 감지 |
+| Automated Testing | 32 pytest tests passed |
+
+※ 성능 개선 수치는 로컬 벤치마크 환경에서 특정 SQL을 대상으로 측정한 결과입니다.
+
+## Development Roadmap
+
+| Version | Focus | Status |
+|---|---|---|
+| V1 | ETL Pipeline & Database | Completed |
+| V2 | REST API, Security & Dashboard | Completed |
+| V3 | Performance, Reliability & Automation | Completed |
+| V4 | Real-world Stock Market Data & Analytics | Planned |
+
+## Documentation
+
+- [System Architecture](docs/architecture.md)
+- [Database Schema](sql/schema.sql)
+- [ERD](docs/erd.md)
+- [SQL Performance Benchmark](docs/performance.md)
+- [Failure Recovery Report](docs/failure_recovery_report.md)
+- [Troubleshooting](docs/troubleshooting.md)
+- [Development Status](PROJECT_STATUS.md)
 
 ## 1. Tech Stack
 
@@ -10,13 +57,23 @@ Python과 MySQL을 활용하여 금융 거래 데이터를 생성, 검증, 적�
 |---|---|
 | Language | Python 3.12 |
 | Database | MySQL 8.4 |
-| Testing | pytest |
+| Backend | FastAPI, Uvicorn |
+| Dashboard | Streamlit |
+| Containerization | Docker, Docker Compose |
+| Scheduling | cron, flock |
+| Data Quality | SQL, Python, JSON Reports |
+| Testing | pytest, unittest.mock |
+| Continuous Integration | GitHub Actions |
 | Environment | WSL Ubuntu |
-| Version Control | Git / GitHub |
+| Version Control | Git, GitHub |
 | Libraries | mysql-connector-python, python-dotenv |
 
 ## 2. Project Architecture
+
+아래는 V1의 ETL 데이터 흐름입니다. V2의 API 및 Docker 구조와 V3의 배치 자동화·CI는 각 버전의 상세 항목을 참고합니다.
+
 상세 시스템 구조와 데이터 처리 흐름은
+
 [Architecture Documentation](docs/architecture.md)에서 확인할 수 있습니다.
 
 ```text
@@ -35,7 +92,6 @@ Duplicate Check      Error Classification
    |                     |
    v                     v
 transactions          rejected_transactions
-
          pipeline_runs
        (Execution Logs)
 ```
@@ -242,7 +298,6 @@ Python 3.12 및 MySQL 8.4 환경을 기준으로 개발했습니다.
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-
 python -m pip install -r requirements.txt
 ```
 
@@ -316,7 +371,6 @@ python -m pytest tests/test_validate.py -v
 
 ```sql
 USE finops_test_db;
-
 INSERT INTO accounts
     (account_id, account_name, created_at)
 VALUES
@@ -386,8 +440,7 @@ DB 테스트에는 `finops_test_db`에 대한 SELECT, INSERT, UPDATE, DELETE 권
 
 정상 거래 데이터와 검증 실패 데이터를 구분하면서, 오류 원인과 입력 데이터의 추적 가능성을 확보했습니다.
 
-
-## 10. Current Limitations & Future Improvements
+## 10. Remaining ETL Limitations & Future Improvements
 
 현재 구현에서 개선이 필요한 부분은 다음과 같습니다.
 
@@ -398,8 +451,8 @@ DB 테스트에는 `finops_test_db`에 대한 SELECT, INSERT, UPDATE, DELETE 권
 - 전체 메인 실행 경로의 End-to-End 테스트
 - 테스트 DB 설정 및 안전장치 개선
 - 대용량 데이터 Batch Insert
-- 처리 성능 측정 및 최적화
-- 정기 실행과 모니터링 자동화
+- 대량 적재 성능 측정 및 최적화
+- 중앙 집중식 모니터링 및 장애 알림
 
 ## 11. Project Status
 
@@ -418,16 +471,14 @@ DB 테스트에는 `finops_test_db`에 대한 SELECT, INSERT, UPDATE, DELETE 권
 - [x] Pipeline failure integration test
 - [x] Separate test database setup
 - [ ] End-to-end recovery improvements
-- [ ] Performance optimization
-- [ ] Automated scheduling and monitoring
+- [x] SQL query performance optimization
+- [x] Automated scheduling and basic quality monitoring
 
 ## 12. Project Objective
 
 금융 거래 데이터를 처리하는 과정에서 발생할 수 있는 데이터 품질 문제, 중복 거래 및 시스템 오류에 대응하는 ETL 파이프라인을 직접 설계하고 구현하는 것을 목표로 했습니다.
 
 프로젝트를 통해 Python 기반 데이터 처리, MySQL 데이터 모델링, SQL 분석, 트랜잭션 관리 및 pytest 자동화 테스트를 통합적으로 경험했습니다.
-
-
 
 ---
 
@@ -450,7 +501,7 @@ FastAPI를 사용하여 MySQL의 금융 거래 데이터를 HTTP API로 조회�
 | GET | `/api/v1/pipeline/runs` | 파이프라인 실행 이력 |
 | GET | `/api/v1/data-quality/summary` | 데이터 품질 통계 |
 
-모든 엔드포인트에 API Key 인증을 적용했습니다.
+API Key 기반 인증을 적용했습니다.
 
 ### Pagination
 
@@ -564,12 +615,9 @@ DB_HOST=db
 DB_USER=finops_user
 DB_PASSWORD=your_db_password
 DB_NAME=finops_db
-
 MYSQL_ROOT_PASSWORD=your_root_password
-
 VIEWER_API_KEY=your_viewer_key
 ADMIN_API_KEY=your_admin_key
-
 API_BASE_URL=http://api:8000
 ```
 
@@ -707,8 +755,6 @@ python -m pytest tests/ -v
 - 기존 테스트: 19 passed, 1 warning
 - 추가 API 테스트: 5 passed (로컬 실행 확인)
 
-추가 API 테스트 파일의 GitHub 반영 여부는 별도 확인이 필요합니다.
-
 ### Database Consistency
 
 MySQL Workbench에서 직접 조회한 SQL 집계 결과와 FastAPI의 `/api/v1/analytics/summary` 응답을 비교했습니다.
@@ -779,18 +825,17 @@ Docker 환경에서 FastAPI와 MySQL, Streamlit과 FastAPI 간의 연결을 확�
 
 ## 20. V2 Limitations & Future Improvements
 
-현재 프로젝트의 주요 한계는 다음과 같습니다.
+V3에서도 남아 있는 V2 관련 한계는 다음과 같습니다.
 
 - 실제 금융기관 수준의 인증·인가 미구현
 - 사용자별 계좌 접근통제 미구현
 - 전체 End-to-End 자동화 테스트 미완성
 - 중앙 집중식 모니터링 미구현
 - 클라우드 배포 미구현
-- 대용량 데이터 성능 최적화 미구현
+- 대용량 데이터 적재 성능 최적화 미구현
 - 자동화된 장애 복구 미구현
-- 배치 스케줄링 미구현
 
-향후 CI/CD, 운영 모니터링, 성능 최적화, 사용자별 접근통제 기능을 확장할 수 있습니다.
+V3에서 자동 테스트(CI), 배치 스케줄링 및 조회 SQL 최적화를 구현했습니다. 자동 배포(CD), 중앙 집중식 모니터링과 사용자별 접근통제는 향후 개선 과제입니다.
 
 ## 21. Project Outcome
 
@@ -799,3 +844,288 @@ Docker 환경에서 FastAPI와 MySQL, Streamlit과 FastAPI 간의 연결을 확�
 이를 통해 Python 기반 ETL 개발, MySQL 데이터 모델링, REST API 설계, 접근통제, 컨테이너 운영, 자동화 테스트 및 시스템 장애 분석 경험을 확보했습니다.
 
 상세 설계는 [System Architecture](docs/architecture.md)에서 확인할 수 있습니다.
+
+---
+
+# V3 — Performance, Reliability & Automation
+
+## 22. SQL Performance Optimization
+
+거래 데이터 증가에 따른 조회 성능 저하를 개선하기 위해 MySQL 복합 인덱스를 설계하고 `EXPLAIN ANALYZE`를 활용하여 실행계획을 분석했습니다.
+
+### Benchmark Environment
+
+- Database: MySQL 8.4
+- Dataset: 100,000 transactions
+- Measurement: EXPLAIN ANALYZE
+- Repetitions: 각 조건별 5회
+
+### Latest Transaction Query
+
+```sql
+CREATE INDEX idx_transactions_date_id
+ON transactions (
+    transaction_at DESC,
+    transaction_id DESC
+);
+```
+
+| Metric | Before | After |
+|---|---:|---:|
+| Average | 138.8 ms | 0.4458 ms |
+| Median | 136 ms | 0.238 ms |
+| Execution Plan | Table Scan → Sort → Limit | Index Scan → Limit |
+
+- 평균 조회 속도 약 311배 향상
+- 평균 실행시간 약 99.68% 감소
+
+### Account Transaction Query
+
+```sql
+CREATE INDEX idx_transactions_account_date_id
+ON transactions (
+    account_id,
+    transaction_at DESC,
+    transaction_id DESC
+);
+```
+
+| Metric | Date-based Index | Account Composite Index |
+|---|---:|---:|
+| Average | 46.200 ms | 2.075 ms |
+| Median | 42.200 ms | 1.640 ms |
+| Examined Index Rows | 7,688 | 100 |
+
+- 평균 조회 속도 약 22.3배 향상
+- 평균 실행시간 약 95.5% 감소
+
+측정 결과는 로컬 환경의 특정 SQL 및 데이터셋에 한정되며, 전체 시스템의 성능 향상을 의미하지 않습니다.
+
+복합 인덱스는 벤치마크 DB에서 검증했으며 현재 기본 스키마가 자동 생성하지 않습니다. 다른 DB에 적용하기 전에 기존 인덱스를 확인하고 필요한 경우 별도로 생성합니다.
+
+상세 측정 결과: [SQL Performance Benchmark](docs/performance.md)
+
+## 23. Idempotency & Failure Recovery
+
+금융 거래 데이터의 반복 적재 및 장애 발생 상황에서 거래 데이터의 일관성을 유지하도록 구현하고 검증했습니다.
+
+### Idempotency
+
+- 거래 ID 기반 중복 적재 방지
+- SHA-256 기반 원본 파일 식별
+- 신규 적재, 중복, 검증 실패 건수 구분
+- 동일 입력 데이터의 반복 실행 검증
+
+### Reprocessing
+
+- 적재 실패 시 미확정 거래 ROLLBACK
+- 실패한 거래의 재처리 검증
+- 재처리 이후 중복 거래 생성 방지
+
+### Unexpected Process Termination
+
+Python 프로세스를 SIGKILL로 강제 종료하여 미커밋 거래의 처리 결과를 확인했습니다.
+
+| Metric | Result |
+|---|---|
+| Termination Signal | SIGKILL |
+| Exit Code | 137 |
+| Explicit Rollback | Not executed |
+| Remaining Uncommitted Test Transactions | 0 |
+
+DB 연결 종료 이후 MySQL이 미확정 트랜잭션을 롤백하는 것을 확인했습니다.
+
+해당 실험은 단일 INSERT에 대한 강제 종료 테스트이며, 전체 ETL 프로세스에 대한 자동 장애 복구를 의미하지 않습니다.
+
+상세 검증 결과: [Failure Recovery Report](docs/failure_recovery_report.md)
+
+## 24. Batch Automation
+
+cron과 flock을 활용하여 금융 거래 데이터의 정기 적재 및 품질 검사 자동화를 구현했습니다.
+
+### Scheduling
+
+- Scheduler: cron
+- Schedule: Daily at 02:00
+- Concurrency Control: flock
+- Entry Point: scripts/run_etl.py
+- Execution Log: logs/etl.log
+
+### Workflow
+
+```mermaid
+flowchart TD
+    A["cron"] --> B["flock"]
+    B --> C["run_etl.py"]
+    C --> D["load.py"]
+    D --> E{"ETL Success?"}
+    E -->|Yes| F["quality.py"]
+    E -->|No| G["Failure Log and Non-zero Exit"]
+    F --> H{"Quality PASS?"}
+    H -->|Yes| I["Success Log and Exit 0"]
+    H -->|No| G
+```
+
+ETL이 실패하면 후속 품질 검사를 실행하지 않습니다.
+
+ETL이 성공하면 데이터 품질 검사를 실행하며, 품질 검사 실패 시 전체 배치 실행 결과를 실패 종료 코드로 반환합니다.
+
+단, 품질 검사 실패가 이미 COMMIT된 거래 데이터를 자동으로 롤백하지는 않습니다.
+
+### Manual Execution
+
+프로젝트 루트 디렉터리에서 실행합니다.
+
+```bash
+source .venv/bin/activate
+python scripts/run_etl.py
+echo $?
+```
+
+### Cron Configuration
+
+```bash
+crontab -e
+```
+
+다음 설정을 추가합니다.
+
+```cron
+0 2 * * * /usr/bin/flock -n /tmp/finops-etl.lock /absolute/path/to/finops-data-platform/.venv/bin/python /absolute/path/to/finops-data-platform/scripts/run_etl.py
+```
+
+실제 프로젝트의 절대 경로에 맞게 설정해야 합니다.
+
+이 구성은 WSL 로컬 환경에서 실행되며, cron 서비스와 로컬 데이터베이스가 정상적으로 동작해야 합니다. Docker Compose 서비스와 별도의 실행 경로입니다. 1분 주기 cron 실행은 검증했으며, 매일 02:00 실행은 설정 완료 상태입니다.
+
+### Execution Logs
+
+```bash
+tail -30 logs/etl.log
+```
+
+### Technology Decision
+
+Apache Airflow 도입을 검토했으나 현재 워크플로의 복잡도와 로컬 개발환경의 메모리 제약을 고려하여 cron과 flock을 유지했습니다.
+
+향후 작업 의존 관계가 복잡해지고 데이터 원천이 증가하면 별도의 워크플로 오케스트레이션 도구 도입을 재검토할 예정입니다.
+
+## 25. Data Quality Monitoring
+
+MySQL에 저장된 데이터를 대상으로 SQL 기반 데이터 품질 검사를 수행합니다.
+
+| Quality Check | Description |
+|---|---|
+| Invalid Amount | 비정상 거래 금액 검사 |
+| NULL Values | 필수 필드 누락 검사 |
+| Duplicate IDs | 중복 거래 ID 검사 |
+| Invalid Foreign Keys | 계좌 참조 무결성 검사 |
+| Pipeline Count Mismatch | 입력 건수와 처리 건수 정합성 검사 |
+
+추가 모니터링 항목:
+
+- 최근 배치별 오류율
+- 오류 유형별 발생 건수
+- 품질 검사 실행 시각
+- 전체 품질 검사 PASS/FAIL 상태
+
+### Quality Report
+
+```bash
+python src/quality.py
+```
+
+검사 결과는 다음 파일에 JSON 형식으로 저장됩니다.
+
+```text
+reports/quality_report.json
+```
+
+### Integrated Execution Verification
+
+| Scenario | Expected Result | Verification |
+|---|---|---|
+| ETL Success + Quality PASS | Exit 0 | Passed |
+| ETL Failure | Skip Quality Check | Passed |
+| ETL Success + Quality FAIL | Exit 1 | Mock Test Passed |
+
+실제 ETL 실행(Run ID 315)에서 데이터 품질 검사가 자동 실행되고 JSON 보고서가 생성되는 것을 확인했습니다. 입력 10,000건, 신규 적재 0건, 중복 9,854건, 검증 실패 146건이며, 최종 종료 코드는 0이었습니다. 오류율 1.46%는 입력 검증 실패 비율이며, 5개 DB 무결성 검사의 PASS/FAIL 판정과 별개입니다. 반복 실행 시 오류 기록이 누적될 수 있습니다.
+
+## 26. Continuous Integration
+
+GitHub Actions를 활용하여 코드 변경에 따른 자동 회귀 테스트를 구성했습니다.
+
+### CI Environment
+
+- GitHub-hosted Ubuntu runner
+- Python 3.12
+- MySQL 8.4 service container
+- Isolated test database
+- Automated database initialization
+- pytest
+
+### CI Triggers
+
+- Push to main
+- Pull Request targeting main
+
+### CI Workflow
+
+```mermaid
+flowchart TD
+    A["Push / Pull Request"] --> B["GitHub Actions"]
+    B --> C["Install Dependencies"]
+    C --> D["Initialize Test Database"]
+    D --> E["Run pytest"]
+    E --> F{"Tests Passed?"}
+    F -->|Yes| G["CI Success"]
+    F -->|No| H["CI Failure"]
+```
+
+### Verification
+
+- 정상 코드 Push 이후 CI 성공 확인
+- 의도적인 실패 테스트가 포함된 PR 생성
+- CI 실패 감지 확인
+- 실험용 PR을 main에 병합하지 않음
+
+### Local Test Execution
+
+기존 전체 테스트 29개와 배치 연동 테스트 3개의 개별 통과를 확인했습니다. 변경 후 전체 32개 테스트 및 CI 재실행은 최종 검증 단계에서 확인할 예정입니다.
+
+```bash
+DB_NAME=finops_test_db python -m pytest tests/ -v
+```
+
+테스트는 운영용 데이터베이스와 분리된 테스트 전용 DB에서 실행합니다.
+
+## 27. V3 Limitations
+
+- 복합 인덱스의 Docker DB 적용 및 성능 재검증 필요
+- 데이터 품질 검사 실패 시 이미 확정된 ETL 데이터의 자동 롤백은 지원하지 않음
+
+- 비정상 종료 이후 RUNNING 상태 자동 복구 미구현
+- 실패 배치 자동 재시도 및 알림 미구현
+- 전체 ETL 강제 종료 통합 테스트 미완성
+- 오류율 기반 품질 실패 임계값 미설정
+- 대량 적재 Batch Insert 최적화 미구현
+- 중앙 집중식 로그 및 모니터링 미구현
+- WSL 실행 상태에 의존하는 cron 스케줄링
+- 실제 금융 시장 데이터 미연동
+- 클라우드 운영 환경 미구축
+
+## 28. Future Development — V4
+
+V4에서는 기존 금융 데이터 플랫폼을 실제 주식 시장 데이터 기반의 투자 분석 플랫폼으로 확장할 예정입니다.
+
+- 외부 주식 데이터 API 연동
+- 주가 및 거래량 데이터 수집
+- 데이터 정규화 및 자동 적재
+- 금융 시계열 데이터 품질 검증
+- OHLCV 기반 캔들 차트 시각화
+- 기술적 지표 분석
+- 투자 전략 백테스트
+- 기업 재무정보 및 공시 데이터 연동
+- AI 기반 금융 데이터 분석
+
+기존 ETL, 데이터베이스, FastAPI, Streamlit, Docker 및 CI 구조를 재사용하여 확장할 계획입니다.

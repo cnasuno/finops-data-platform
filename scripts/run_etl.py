@@ -41,7 +41,42 @@ def main():
             if result.stderr:
                 logging.error("ETL error:\n%s", result.stderr)
 
-        return result.returncode
+                # ETL 실패 시 품질 검사 없이 종료
+        if result.returncode != 0:
+            return result.returncode
+
+        # ETL 성공 후 데이터 품질 검사
+        logging.info("Data quality check started")
+
+        quality_result = subprocess.run(
+            [sys.executable, str(BASE_DIR / "src" / "quality.py")],
+            cwd=BASE_DIR,
+            check=False,
+            capture_output=True,
+            text=True
+        )
+
+        if quality_result.stdout:
+            logging.info(
+                "Data quality output:\n%s",
+                quality_result.stdout
+            )
+
+        if quality_result.returncode == 0:
+            logging.info("Data quality check passed")
+        else:
+            logging.error(
+                "Data quality check failed (exit code: %s)",
+                quality_result.returncode
+            )
+
+            if quality_result.stderr:
+                logging.error(
+                    "Data quality error:\n%s",
+                    quality_result.stderr
+                )
+
+        return quality_result.returncode
 
     except Exception:
         logging.exception("Failed to execute ETL")

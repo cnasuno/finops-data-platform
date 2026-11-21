@@ -1,7 +1,7 @@
 # FinOps Data Platform — Project Status
 
 ## Current Version
-V2 — Financial Data API Service
+V3 — Reliability, Performance & Automation
 
 ## Last Updated
 2026-11-21
@@ -355,9 +355,6 @@ V2 — Financial Data API Service
 - Database-level automated integration tests are not yet implemented
 - Quality checks are not yet integrated into scheduled ETL execution
 
-cd ~/finops-data-platform
-
-cat >> PROJECT_STATUS.md <<'EOF'
 
 ## V3 Day 5 — Failure Simulation and Recovery
 
@@ -388,9 +385,6 @@ cat >> PROJECT_STATUS.md <<'EOF'
 - Recovery time not measured
 - Automatic retry and alerting not implemented
 
-cd ~/finops-data-platform
-
-cat >> PROJECT_STATUS.md <<'EOF'
 
 ## V3 Day 6 — GitHub Actions CI
 
@@ -421,6 +415,76 @@ cat >> PROJECT_STATUS.md <<'EOF'
 - No production database integration
 - CI tests require a test database
 
-### Next Task
-- V3 Day 7: Evaluate Apache Airflow adoption
+
+## V3 Day 7 — Scheduling Architecture Decision
+
+### Date
+2026-11-21
+
+### Evaluated
+- Apache Airflow
+- Existing cron and flock automation
+- Local hardware resource constraints
+- Workflow orchestration requirements
+
+### Environment
+- Physical RAM: approximately 8 GB
+- WSL memory: 3.7 GiB
+- Available WSL memory: 2.4 GiB
+
+### Decision
+- Retain cron and flock for V3
+- Defer Apache Airflow adoption
+
+### Rationale
+- Existing batch workflow has limited task dependencies
+- cron provides sufficient scheduling functionality
+- flock prevents concurrent batch execution
+- Airflow introduces additional resource and operational overhead
+
+### Future Improvements
+- Reevaluate Airflow when pipeline complexity increases
+- Integrate data quality checks into scheduled execution
+- Introduce automated retry and failure notifications
+
+## V3 Final Integration & Verification
+
+### Date
+2026-11-21
+
+### Completed
+- Integrated ETL execution with automated data quality checks
+- Implemented conditional execution based on ETL exit status
+- Added three automated workflow tests
+- Updated README and system architecture documentation
+- Verified Docker container recreation and data persistence
+- Retained cron and flock as the scheduling architecture
+
+### Verification
+- ETL success and quality PASS: Exit 0
+- ETL failure: Quality check skipped
+- Quality failure propagation: Mock test passed
+- Docker MySQL: Healthy
+- Docker FastAPI: Running
+- Docker Streamlit: Running
+- Persisted accounts: 100
+- Persisted transactions: 9854
+- Total pytest results: 32 passed
+
+### Resource Measurement
+- MySQL: 445.1 MiB
+- FastAPI: 48.24 MiB
+- Streamlit: 54.24 MiB
+- Total container memory usage: 547.58 MiB
+- Measured shortly after container startup
+
+### Remaining Limitations
+- No automatic recovery of stale RUNNING states
+- No automatic retry or failure notifications
+- No centralized monitoring
+- No production-level deployment
+- No real-world financial market data integration
+
+### Next Version
+V4 — Real-world Stock Market Data & Investment Analytics
 EOF

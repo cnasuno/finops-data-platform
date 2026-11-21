@@ -355,5 +355,39 @@ V2 — Financial Data API Service
 - Database-level automated integration tests are not yet implemented
 - Quality checks are not yet integrated into scheduled ETL execution
 
+cd ~/finops-data-platform
+
+cat >> PROJECT_STATUS.md <<'EOF'
+
+## V3 Day 5 — Failure Simulation and Recovery
+
+### Date
+2026-11-21
+
+### Completed
+- Reviewed previous V1/V2/V3 failure experiments
+- Verified rollback and retry test using finops_test_db
+- Simulated unexpected Python termination using SIGKILL
+- Verified MySQL rollback of uncommitted transaction
+- Consolidated failure experiments into one report
+
+### Verification
+- tests/test_pipeline_retry.py: 1 passed
+- Test DB: finops_test_db
+- SIGKILL exit code: 137
+- Remaining uncommitted test transactions: 0
+- Existing failure scenarios reviewed and documented
+
+### Files
+- docs/failure_recovery_report.md
+- PROJECT_STATUS.md
+
+### Known Limitations
+- Full ETL process termination not tested
+- Stale RUNNING pipeline recovery not implemented
+- Recovery time not measured
+- Automatic retry and alerting not implemented
+
 ### Next Task
-- V3 Day 5: Failure Simulation and Recovery
+- V3 Day 6: Regression Testing and GitHub Actions CI
+EOF
